@@ -54,15 +54,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   // Teacher state
   const [teachers, setTeachers] = useState([
-    { id: '1', name: 'Dr. Abhijit Salunke', department: 'AIML', subjects: ['CCN', 'Python'], joinDate: '2022-08-15' }
+    { TID: '1', Name: 'Dr. Abhijit Salunke', Department: 'AIML', Subjects: ['CCN', 'Python'], JoinDate: '2022-08-15' }
   ]);
   const [isNewTeacherOpen, setIsNewTeacherOpen] = useState(false);
   const [teacherSearchTerm, setTeacherSearchTerm] = useState('');
   const [newTeacher, setNewTeacher] = useState({
-    name: '',
-    department: '',
-    subjects: [''],
-    joinDate: format(new Date(), 'yyyy-MM-dd')
+    TID:'',
+    Name: '',
+    Department: '',
+    Subjects: [''],
+    JoinDate: format(new Date(), 'yyyy-MM-dd')
   });
 
   // Exam Room state
@@ -143,15 +144,56 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   
 
   // Teacher functions
-  const handleAddTeacher = () => {
-    setTeachers([...teachers, { ...newTeacher, id: Date.now().toString() }]);
-    setNewTeacher({ name: '', department: '', subjects: [''], joinDate: format(new Date(), 'yyyy-MM-dd') });
-    setIsNewTeacherOpen(false);
+  const handleAddTeacher = async () => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/teachers', {
+        Name: newTeacher.Name,
+        Department: newTeacher.Department,
+        TID: newTeacher.TID,
+        Subjects: newTeacher.Subjects,
+        JoinDate: newTeacher.JoinDate
+      });
+  
+      // Add the new teacher to local state
+      setTeachers([...teachers, {
+        Name: response.data.Name,
+        Department: response.data.Department,
+        TID: response.data.TID,
+        Subjects: response.data.Subjects,
+        JoinDate: response.data.JoinDate
+      }]);
+  
+      await fetchTeachers(); // Refresh teacher list
+  
+      // Reset form and close modal
+      setNewTeacher({ Name: '', Department: '',TID: '', Subjects: [''], JoinDate: format(new Date(), 'yyyy-MM-dd') });
+      setIsNewTeacherOpen(false);
+  
+      alert('Teacher added successfully!');
+    } catch (error) {
+      console.error('Error adding teacher:', error);
+      alert('Failed to add teacher');
+    }
   };
-
-  const handleDeleteTeacher = (id: string) => {
-    setTeachers(teachers.filter(teacher => teacher.id !== id));
+  
+  const fetchTeachers = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/teachers');
+      setTeachers(response.data);
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+    }
   };
+  
+  const handleDeleteTeacher = async (TID: string) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/teachers/${TID}`);
+      await fetchTeachers(); // Refresh list
+    } catch (error) {
+      console.error('Failed to delete teacher:', error);
+    }
+  };
+  
 
   // Room functions
   const handleAddRoom = () => {
@@ -390,9 +432,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const renderTeachers = () => {
     const filteredTeachers = teachers.filter(teacher =>
-      teacher.name.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
-      teacher.department.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
-      teacher.subjects.some(sub => sub.toLowerCase().includes(teacherSearchTerm.toLowerCase()))
+      teacher.Name.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
+      teacher.Department.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
+      teacher.Subjects.some(sub => sub.toLowerCase().includes(teacherSearchTerm.toLowerCase()))
     );
 
     return (
@@ -440,12 +482,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredTeachers.map((teacher) => (
-                    <tr key={teacher.id} className="hover:bg-gray-50">
-                      <td className="p-4 text-[#1a237e] font-medium">{teacher.name}</td>
-                      <td className="p-4 text-[#1a237e]">{teacher.department}</td>
-                      <td className="p-4 text-[#1a237e]">{teacher.subjects.join(', ')}</td>
+                    <tr key={teacher.TID} className="hover:bg-gray-50">
+                      <td className="p-4 text-[#1a237e] font-medium">{teacher.Name}</td>
+                      <td className="p-4 text-[#1a237e]">{teacher.Department}</td>
+                      <td className="p-4 text-[#1a237e]">{teacher.Subjects.join(', ')}</td>
                       <td className="p-4 text-[#1a237e]">
-                        {format(new Date(teacher.joinDate), 'MMM dd, yyyy')}
+                        {format(new Date(teacher.JoinDate), 'MMM dd, yyyy')}
                       </td>
                       <td className="p-4 flex gap-4">
                         <button className="text-[#1a237e] hover:text-[#303f9f]">
@@ -453,7 +495,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                         </button>
                         <button 
                           className="text-red-600 hover:text-red-800"
-                          onClick={() => handleDeleteTeacher(teacher.id)}
+                          onClick={() => handleDeleteTeacher(teacher.TID)} // changed from teacher.id
                         >
                           <Trash2 size={18} />
                         </button>
@@ -484,8 +526,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newTeacher.name}
-                    onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
+                    value={newTeacher.Name}
+                    onChange={(e) => setNewTeacher({...newTeacher, Name: e.target.value})}
                   />
                 </div>
                 <div>
@@ -493,8 +535,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newTeacher.department}
-                    onChange={(e) => setNewTeacher({...newTeacher, department: e.target.value})}
+                    value={newTeacher.Department}
+                    onChange={(e) => setNewTeacher({...newTeacher, Department: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#1a237e] mb-1">TID</label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-lg"
+                    value={newTeacher.TID}
+                    onChange={(e) => setNewTeacher({...newTeacher, TID: e.target.value})}
                   />
                 </div>
                 <div>
@@ -502,8 +553,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newTeacher.subjects.join(', ')}
-                    onChange={(e) => setNewTeacher({...newTeacher, subjects: e.target.value.split(',').map(s => s.trim())})}
+                    value={newTeacher.Subjects.join(', ')}
+                    onChange={(e) => setNewTeacher({...newTeacher, Subjects: e.target.value.split(',').map(s => s.trim())})}
                   />
                 </div>
                 <div>
@@ -511,8 +562,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="date"
                     className="w-full p-2 border rounded-lg"
-                    value={newTeacher.joinDate}
-                    onChange={(e) => setNewTeacher({...newTeacher, joinDate: e.target.value})}
+                    value={newTeacher.JoinDate}
+                    onChange={(e) => setNewTeacher({...newTeacher, JoinDate: e.target.value})}
                   />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
