@@ -43,6 +43,29 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+
+// Route to fetch students
+app.get('/api/students', async (req, res) => {
+  try {
+    const students = await pool.query('SELECT * FROM students'); // or your table name
+    res.json(students.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+app.get('/api/teachers', async (req, res) => {
+  try {
+    const students = await pool.query('SELECT * FROM teachers'); // or your table name
+    res.json(students.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+
+
 // Start server
 app.listen(port, () => {
   console.log(`✅ Server is running on http://localhost:${port}`);

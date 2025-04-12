@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import axios from 'axios';
 import { 
   Settings,
@@ -32,39 +32,77 @@ interface User {
   name: string;
   email: string;
 }
+interface Teacher {
+  name: string;
+  department: string;
+  tid: string;
+  subjects: string[];
+  JoinDate: string;
+}
+
+
+interface Student {
+  Name: string;
+  Class: string;
+  UID: string;
+  Email: string;
+  Contact: string;
+}
+
+
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  
   // Student state
-  const [students, setStudents] = useState([
-    {  Name: 'Meet', Class: 'SE', UID: '2023300140', Email:'meetmehta23@gmail.com', Contact:'939324131' }    
-  ]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [isNewStudentOpen, setIsNewStudentOpen] = useState(false);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  
   const [newStudent, setNewStudent] = useState({
     Name: '',
     Class: '',
     UID: '',
     Email: '',
-    Contact:'',
-    
+    Contact: '',
   });
 
+  useEffect(() => {
+    console.log("useEffect triggered!"); // ← Add this
+  fetch("http://localhost:5000/api/students")
+    .then(res => res.json())
+    .then(data => {
+      console.log("Fetched data:", data);
+      setStudents(data);
+    })
+    .catch(err => console.error("Fetch error:", err));
+  }, []);
+
   // Teacher state
-  const [teachers, setTeachers] = useState([
-    { TID: '1', Name: 'Dr. Abhijit Salunke', Department: 'AIML', Subjects: ['CCN', 'Python'], JoinDate: '2022-08-15' }
-  ]);
+  
   const [isNewTeacherOpen, setIsNewTeacherOpen] = useState(false);
   const [teacherSearchTerm, setTeacherSearchTerm] = useState('');
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [newTeacher, setNewTeacher] = useState({
-    TID:'',
-    Name: '',
-    Department: '',
-    Subjects: [''],
+    name: '',
+    department: '',
+    tid:'',
+    subjects: [''],
     JoinDate: format(new Date(), 'yyyy-MM-dd')
   });
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/teachers")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Fetched teachers:", data);
+        setTeachers(data);
+      })
+      .catch((err) => console.error("Failed to fetch teachers:", err));
+    }, []);
+
 
   // Exam Room state
   const [examRooms, setExamRooms] = useState([
@@ -147,26 +185,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const handleAddTeacher = async () => {
     try {
       const response = await axios.post('http://localhost:5000/api/teachers', {
-        Name: newTeacher.Name,
-        Department: newTeacher.Department,
-        TID: newTeacher.TID,
-        Subjects: newTeacher.Subjects,
+        name: newTeacher.name,
+        department: newTeacher.department,
+        tid: newTeacher.tid,
+        subjects: newTeacher.subjects,
         JoinDate: newTeacher.JoinDate
       });
   
       // Add the new teacher to local state
       setTeachers([...teachers, {
-        Name: response.data.Name,
-        Department: response.data.Department,
-        TID: response.data.TID,
-        Subjects: response.data.Subjects,
+        name: response.data.Name,
+        department: response.data.department,
+        tid: response.data.tid,
+        subjects: response.data.subjects,
         JoinDate: response.data.JoinDate
       }]);
   
       await fetchTeachers(); // Refresh teacher list
   
       // Reset form and close modal
-      setNewTeacher({ Name: '', Department: '',TID: '', Subjects: [''], JoinDate: format(new Date(), 'yyyy-MM-dd') });
+      setNewTeacher({ name: '', department: '',tid: '', subjects: [''], JoinDate: format(new Date(), 'yyyy-MM-dd') });
       setIsNewTeacherOpen(false);
   
       alert('Teacher added successfully!');
@@ -185,9 +223,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     }
   };
   
-  const handleDeleteTeacher = async (TID: string) => {
+  const handleDeleteTeacher = async (tid: string) => {
     try {
-      await axios.delete(`http://localhost:5000/api/teachers/${TID}`);
+      await axios.delete(`http://localhost:5000/api/teachers/${tid}`);
       await fetchTeachers(); // Refresh list
     } catch (error) {
       console.error('Failed to delete teacher:', error);
@@ -273,10 +311,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const renderStudents = () => {
     const filteredStudents = students.filter(student =>
-      student.Name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-      student.Class.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-      student.Email.toLowerCase().includes(studentSearchTerm.toLowerCase())
+      student?.Name?.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+      student?.Class?.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+      student?.Email?.toLowerCase().includes(studentSearchTerm.toLowerCase())
     );
+  
+  
 
     return (
       <div className="p-6 space-y-6">
@@ -432,9 +472,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const renderTeachers = () => {
     const filteredTeachers = teachers.filter(teacher =>
-      teacher.Name.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
-      teacher.Department.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
-      teacher.Subjects.some(sub => sub.toLowerCase().includes(teacherSearchTerm.toLowerCase()))
+      teacher.name.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
+      teacher.department.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
+      teacher.subjects.some(sub => sub.toLowerCase().includes(teacherSearchTerm.toLowerCase()))
     );
 
     return (
@@ -481,28 +521,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredTeachers.map((teacher) => (
-                    <tr key={teacher.TID} className="hover:bg-gray-50">
-                      <td className="p-4 text-[#1a237e] font-medium">{teacher.Name}</td>
-                      <td className="p-4 text-[#1a237e]">{teacher.Department}</td>
-                      <td className="p-4 text-[#1a237e]">{teacher.Subjects.join(', ')}</td>
-                      <td className="p-4 text-[#1a237e]">
-                        {format(new Date(teacher.JoinDate), 'MMM dd, yyyy')}
-                      </td>
-                      <td className="p-4 flex gap-4">
-                        <button className="text-[#1a237e] hover:text-[#303f9f]">
-                          <Edit size={18} />
-                        </button>
-                        <button 
-                          className="text-red-600 hover:text-red-800"
-                          onClick={() => handleDeleteTeacher(teacher.TID)} // changed from teacher.id
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+  {filteredTeachers.map((teacher) => (
+    <tr key={teacher.tid} className="hover:bg-gray-50">
+      <td className="p-4 text-[#1a237e] font-medium">{teacher.name}</td>
+      <td className="p-4 text-[#1a237e]">{teacher.department}</td>
+      <td className="p-4 text-[#1a237e]">{teacher.subjects.join(', ')}</td>
+      <td className="p-4 text-[#1a237e]">
+      {teacher.JoinDate ? format(new Date(teacher.JoinDate), 'yyyy-mm-dd') : 'N/A'}
+      </td>
+      <td className="p-4">
+        <div className="flex gap-4 items-center">
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
               </table>
             </div>
           </div>
@@ -526,8 +560,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newTeacher.Name}
-                    onChange={(e) => setNewTeacher({...newTeacher, Name: e.target.value})}
+                    value={newTeacher.name}
+                    onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
                   />
                 </div>
                 <div>
@@ -535,8 +569,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newTeacher.Department}
-                    onChange={(e) => setNewTeacher({...newTeacher, Department: e.target.value})}
+                    value={newTeacher.department}
+                    onChange={(e) => setNewTeacher({...newTeacher, department: e.target.value})}
                   />
                 </div>
                 <div>
@@ -544,8 +578,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newTeacher.TID}
-                    onChange={(e) => setNewTeacher({...newTeacher, TID: e.target.value})}
+                    value={newTeacher.tid}
+                    onChange={(e) => setNewTeacher({...newTeacher, tid: e.target.value})}
                   />
                 </div>
                 <div>
@@ -553,8 +587,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newTeacher.Subjects.join(', ')}
-                    onChange={(e) => setNewTeacher({...newTeacher, Subjects: e.target.value.split(',').map(s => s.trim())})}
+                    value={newTeacher.subjects.join(', ')}
+                    onChange={(e) => setNewTeacher({...newTeacher, subjects: e.target.value.split(',').map(s => s.trim())})}
                   />
                 </div>
                 <div>
@@ -917,7 +951,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     );
   };
 
-  return (
+return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-20 lg:w-64 h-screen bg-white shadow-xl fixed left-0">
@@ -1037,6 +1071,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     </div>
   );
   
+
 };
 
 export default AdminDashboard;
