@@ -102,7 +102,7 @@ export interface StudentData {
   id: string;
   name: string;
   email: string;
-  class: string;
+  grade: string;
   rollNumber: string;
   attendance: number;
   performanceData: {

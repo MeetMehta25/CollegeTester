@@ -13,17 +13,17 @@ const getStudents = async (req, res) => {
 
 // Add a new student
 const addStudent = async (req, res) => {
-  const { Name, Class, UID, Email, Contact } = req.body;
+  const { name, grade, uid, email, contact } = req.body;
   console.log('Incoming student data:', req.body); // 🔍 LOG THIS
 
-  if (!Name || !Class || !UID || !Email || !Contact) {
+  if (!name || !grade || !uid || !email || !contact) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
   try {
     const result = await db.query(
-      'INSERT INTO students (Name, Class, UID, Email, Contact) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [Name, Class, UID, Email, Contact]
+      'INSERT INTO students (Name, grade, UID, Email, Contact) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, grade, uid, email, contact]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

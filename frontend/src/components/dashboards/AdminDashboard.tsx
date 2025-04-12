@@ -42,11 +42,11 @@ interface Teacher {
 
 
 interface Student {
-  Name: string;
-  Class: string;
-  UID: string;
-  Email: string;
-  Contact: string;
+  name: string;
+  grade: string;
+  uid: string;
+  email: string;
+  contact: string;
 }
 
 
@@ -62,11 +62,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   
   const [newStudent, setNewStudent] = useState({
-    Name: '',
-    Class: '',
-    UID: '',
-    Email: '',
-    Contact: '',
+    name: '',
+    grade: '',
+    uid: '',
+    email: '',
+    contact: '',
   });
 
   useEffect(() => {
@@ -135,25 +135,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const handleAddStudent = async () => {
     try {
       const response = await axios.post('http://localhost:5000/api/students', {
-        Name: newStudent.Name,
-        Class: newStudent.Class,
-        UID: newStudent.UID,
-        Email: newStudent.Email,
-        Contact: newStudent.Contact
+        name: newStudent.name,
+        grade: newStudent.grade,
+        uid: newStudent.uid,
+        email: newStudent.email,
+        contact: newStudent.contact
       });
   
       // Add the new student to local state with the ID returned from the database
       setStudents([...students, {
-        Name: response.data.Name,
-        Class: response.data.Class,
-        UID: response.data.UID,
-        Email: response.data.Email,
-        Contact: response.data.Contact
+        name: response.data.name,
+        grade: response.data.grade,
+        uid: response.data.uid,
+        email: response.data.email,
+        contact: response.data.contact
       }]);
       await fetchStudents(); 
       
       // Reset form and close modal
-      setNewStudent({ Name: '', Class: '', UID: '', Email: '', Contact: '' });
+      setNewStudent({ name: '', grade: '', uid: '', email: '', contact: '' });
       setIsNewStudentOpen(false);
       
       // Optional: Show success notification
@@ -311,9 +311,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const renderStudents = () => {
     const filteredStudents = students.filter(student =>
-      student?.Name?.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-      student?.Class?.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-      student?.Email?.toLowerCase().includes(studentSearchTerm.toLowerCase())
+      student?.name?.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+      student?.grade?.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+      student?.email?.toLowerCase().includes(studentSearchTerm.toLowerCase())
     );
   
   
@@ -355,7 +355,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 <thead className="bg-[#e8eaf6]">
                   <tr>
                     <th className="p-4 text-left text-[#1a237e]">Name</th>
-                    <th className="p-4 text-left text-[#1a237e]">Class</th>
+                    <th className="p-4 text-left text-[#1a237e]">Grade</th>
                     <th className="p-4 text-left text-[#1a237e]">UID</th>
                     <th className="p-4 text-left text-[#1a237e]">Email</th>
                     <th className="p-4 text-left text-[#1a237e]">Contact</th>
@@ -364,19 +364,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
   {filteredStudents.map((student) => (
-    <tr key={student.UID} className="hover:bg-gray-50">
-      <td className="p-4 text-[#1a237e] font-medium">{student.Name}</td>
-      <td className="p-4 text-[#1a237e]">{student.Class}</td>
-      <td className="p-4 text-[#1a237e]">{student.UID}</td>
-      <td className="p-4 text-[#1a237e]">{student.Email}</td>
-      <td className="p-4 text-[#1a237e]">{student.Contact}</td>
+    <tr key={student.uid} className="hover:bg-gray-50">
+      <td className="p-4 text-[#1a237e] font-medium">{student.name}</td>
+      <td className="p-4 text-[#1a237e]">{student.grade}</td>
+      <td className="p-4 text-[#1a237e]">{student.uid}</td>
+      <td className="p-4 text-[#1a237e]">{student.email}</td>
+      <td className="p-4 text-[#1a237e]">{student.contact}</td>
       <td className="p-4 flex gap-4">
         <button className="text-[#1a237e] hover:text-[#303f9f]">
           <Edit size={18} />
         </button>
         <button 
           className="text-red-600 hover:text-red-800"
-          onClick={() => handleDeleteStudent(student.UID)} // changed from student.id
+          onClick={() => handleDeleteStudent(student.uid)} // changed from student.id
         >
           <Trash2 size={18} />
         </button>
@@ -408,17 +408,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newStudent.Name}
-                    onChange={(e) => setNewStudent({...newStudent, Name: e.target.value})}
+                    value={newStudent.name}
+                    onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-[#1a237e] mb-1">Class</label>
+                  <label className="block text-[#1a237e] mb-1">Grade</label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newStudent.Class}
-                    onChange={(e) => setNewStudent({...newStudent, Class: e.target.value})}
+                    value={newStudent.grade}
+                    onChange={(e) => setNewStudent({...newStudent, grade: e.target.value})}
                   />
                 </div>
                 <div>
@@ -426,8 +426,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newStudent.UID}
-                    onChange={(e) => setNewStudent({...newStudent, UID: e.target.value})}
+                    value={newStudent.uid}
+                    onChange={(e) => setNewStudent({...newStudent, uid: e.target.value})}
                   />
                 </div>
                 <div>
@@ -435,8 +435,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"                    
                     className="w-full p-2 border rounded-lg"
-                    value={newStudent.Email}
-                    onChange={(e) => setNewStudent({...newStudent, Email: e.target.value})}
+                    value={newStudent.email}
+                    onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
                   />
                 </div>
                 <div>
@@ -444,8 +444,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"                    
                     className="w-full p-2 border rounded-lg"
-                    value={newStudent.Contact}
-                    onChange={(e) => setNewStudent({...newStudent, Contact: e.target.value})}
+                    value={newStudent.contact}
+                    onChange={(e) => setNewStudent({...newStudent, contact: e.target.value})}
                   />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
