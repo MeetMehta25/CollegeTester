@@ -39,6 +39,12 @@ interface Teacher {
   subjects: string[];
   JoinDate: string;
 }
+interface Room {
+  roomnumber: string;
+  time: string;
+  purpose: string;
+  status: string;
+}
 
 
 interface Student {
@@ -48,6 +54,7 @@ interface Student {
   email: string;
   contact: string;
 }
+
 
 
 
@@ -105,17 +112,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
 
   // Exam Room state
-  const [examRooms, setExamRooms] = useState([
-    { id: '1', roomNumber: '101', capacity: 40, floor: '1st', status: 'available' }
-  ]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [isNewRoomOpen, setIsNewRoomOpen] = useState(false);
   const [roomSearchTerm, setRoomSearchTerm] = useState('');
   const [newRoom, setNewRoom] = useState({
-    roomNumber: '',
-    capacity: 20,
-    floor: '1st',
+    roomnumber: '',
+    time:'',
+    purpose:'',
     status: 'available'
   });
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/rooms")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Fetched rooms:", data);
+        setRooms(data);
+      })
+      .catch((err) => console.error("Failed to fetch rooms:", err));
+  }, []);
+
 
   // Timetable state
   const [timetable, setTimetable] = useState([
@@ -234,15 +250,54 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   
 
   // Room functions
-  const handleAddRoom = () => {
-    setExamRooms([...examRooms, { ...newRoom, id: Date.now().toString() }]);
-    setNewRoom({ roomNumber: '', capacity: 20, floor: '1st', status: 'available' });
-    setIsNewRoomOpen(false);
-  };
+ const handleAddRoom = async () => {
+  try {
+    const response = await axios.post('http://localhost:5000/api/rooms', {
+      roomnumber: newRoom.roomnumber,
+      time: newRoom.time,
+      purpose: newRoom.purpose,
+      status: newRoom.status
+    });
 
-  const handleDeleteRoom = (id: string) => {
-    setExamRooms(examRooms.filter(room => room.id !== id));
-  };
+    // Add the new room to local state
+    setRooms([...rooms, {
+      roomnumber: response.data.roomnumber,
+      time: response.data.time,
+      purpose: response.data.purpose,
+      status: response.data.status,
+    }]);
+
+    await fetchRooms(); // refresh
+
+    // Reset form and close modal
+    setNewRoom({ roomnumber: '', time: '', purpose: '', status: 'available' });
+    setIsNewRoomOpen(false);
+
+    alert('Room added successfully!');
+  } catch (error) {
+    console.error('Error adding room:', error);
+    alert('Failed to add room');
+  }
+};
+
+const fetchRooms = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/api/rooms');
+    setRooms(response.data);
+  } catch (error) {
+    console.error('Error fetching rooms:', error);
+  }
+};
+
+const handleDeleteRoom = async (roomnumber: string) => {
+  try {
+    await axios.delete(`http://localhost:5000/api/rooms/${roomnumber}`);
+    await fetchRooms();
+  } catch (error) {
+    console.error("Failed to delete room", error);
+  }
+};
+
 
   // Schedule functions
   const handleAddSchedule = () => {
@@ -281,7 +336,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             <Home size={24} className="h-12 w-12 text-[#1a237e]/30" />
             <div>
               <h3 className="text-lg font-semibold text-[#1a237e]">Available Rooms</h3>
-              <p className="text-3xl font-bold text-[#1a237e] mt-2">{examRooms.filter(r => r.status === 'available').length}</p>
+              <p className="text-3xl font-bold text-[#1a237e] mt-2">{rooms.filter(r => r.status === 'available').length}</p>
             </div>
           </div>
         </div>
@@ -623,9 +678,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   };
 
   const renderExamRooms = () => {
-    const filteredRooms = examRooms.filter(room =>
-      room.roomNumber.toLowerCase().includes(roomSearchTerm.toLowerCase()) ||
-      room.floor.toLowerCase().includes(roomSearchTerm.toLowerCase()) ||
+    const filteredRooms = rooms.filter(room =>
+      //room.roomnumber.toLowerCase().includes(roomSearchTerm.toLowerCase()) ||
+      room.purpose.toLowerCase().includes(roomSearchTerm.toLowerCase()) ||
       room.status.toLowerCase().includes(roomSearchTerm.toLowerCase())
     );
 
@@ -666,18 +721,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 <thead className="bg-[#e8eaf6]">
                   <tr>
                     <th className="p-4 text-left text-[#1a237e]">Room Number</th>
-                    <th className="p-4 text-left text-[#1a237e]">Capacity</th>
-                    <th className="p-4 text-left text-[#1a237e]">Floor</th>
+                    <th className="p-4 text-left text-[#1a237e]">Time</th>
+                    <th className="p-4 text-left text-[#1a237e]">Purpose</th>
                     <th className="p-4 text-left text-[#1a237e]">Status</th>
                     <th className="p-4 text-left text-[#1a237e]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredRooms.map((room) => (
-                    <tr key={room.id} className="hover:bg-gray-50">
-                      <td className="p-4 text-[#1a237e] font-medium">{room.roomNumber}</td>
-                      <td className="p-4 text-[#1a237e]">{room.capacity}</td>
-                      <td className="p-4 text-[#1a237e]">{room.floor}</td>                    
+                    <tr key={room.roomnumber} className="hover:bg-gray-50">
+                      <td className="p-4 text-[#1a237e] font-medium">{room.roomnumber}</td>
+                      <td className="p-4 text-[#1a237e]">{room.time}</td>
+                      <td className="p-4 text-[#1a237e]">{room.purpose}</td>                    
                       <td className="p-4">
                         <span className={`px-3 py-1 rounded-full text-sm ${
                           room.status === 'available' 
@@ -693,7 +748,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                         </button>
                         <button 
                           className="text-red-600 hover:text-red-800"
-                          onClick={() => handleDeleteRoom(room.id)}
+                          onClick={() => handleDeleteRoom(room.roomnumber)}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -724,31 +779,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
-                    value={newRoom.roomNumber}
-                    onChange={(e) => setNewRoom({...newRoom, roomNumber: e.target.value})}
+                    value={newRoom.roomnumber}
+                    onChange={(e) => setNewRoom({...newRoom, roomnumber: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-[#1a237e] mb-1">Capacity</label>
+                  <label className="block text-[#1a237e] mb-1">TIME</label>
                   <input
                     type="number"
                     min="1"
                     className="w-full p-2 border rounded-lg"
-                    value={newRoom.capacity}
-                    onChange={(e) => setNewRoom({...newRoom, capacity: parseInt(e.target.value) || 1})}
+                    value={newRoom.time}
+                    onChange={(e) => setNewRoom({...newRoom, time: (parseInt(e.target.value) || 1).toString()})}
                   />
                 </div>
                 <div>
-                  <label className="block text-[#1a237e] mb-1">Floor</label>
+                  <label className="block text-[#1a237e] mb-1">Purpose</label>
                   <select
                     className="w-full p-2 border rounded-lg"
-                    value={newRoom.floor}
-                    onChange={(e) => setNewRoom({...newRoom, floor: e.target.value})}
+                    value={newRoom.purpose}
+                    onChange={(e) => setNewRoom({...newRoom, purpose: e.target.value})}
                   >
-                    <option value="1st">1st Floor</option>
-                    <option value="2nd">2nd Floor</option>
-                    <option value="3rd">3rd Floor</option>
-                    <option value="4th">4th Floor</option>
+                    <option value="exam">Exam</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="event">Event</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
                 <div>
@@ -1015,6 +1070,7 @@ return (
                 { icon: Users, label: 'Teachers' },
                 { icon: School, label: 'Exam Rooms' },
                 { icon: Calendar, label: 'Timetable' },
+                { icon: Calendar, label: 'Notes' },
               ].map(({ icon: Icon, label }) => (
                 <button
                   key={label}

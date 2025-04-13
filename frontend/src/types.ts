@@ -122,9 +122,9 @@ export interface TeacherData {
 
 export interface ExamRoom {
   id: string;
-  roomNumber: string;
-  capacity: number;
-  floor: string;
+  roomnumber: string;
+  time: number;
+  purpose: string;
   building: string;
   status: 'available' | 'occupied' | 'maintenance';
 }
